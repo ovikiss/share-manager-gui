@@ -6,7 +6,7 @@ COPY main.go ./
 RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/share-manager main.go
 
 FROM alpine:3.22
-RUN apk add --no-cache samba-common-tools nfs-utils util-linux ca-certificates curl
+RUN apk add --no-cache util-linux ca-certificates curl
 WORKDIR /app
 COPY --from=build /out/share-manager /usr/local/bin/share-manager
 COPY index.html ./
