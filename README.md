@@ -93,6 +93,7 @@ exportfs -ra
 - `.github/workflows/ci.yml` verifies Go formatting, tests, build and Docker build.
 - Version tags publish `amd64`, `arm64` and `arm/v7` images to GHCR.
 - Every CI/release build synchronizes the header, CSS, icons and translations from [`mikrotik-ui-shared`](https://github.com/ovikiss/mikrotik-ui-shared); these generated files are not committed here.
+- The shared header uses the Share Manager application icon from `/share-manager-icon.svg`.
 - `.github/dependabot.yml` checks Go modules, Docker and GitHub Actions monthly.
 - `.gitignore` excludes local binaries, environment files and runtime backups.
 - No host credentials, Samba databases or generated runtime data belong in Git.
