@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -142,7 +143,23 @@ func atomicWrite(path, content string) error {
 	if err != nil {
 		return err
 	}
-	return os.Rename(tmpName, path)
+	if err := os.Rename(tmpName, path); err != nil {
+		if !errors.Is(err, syscall.EBUSY) {
+			return err
+		}
+		// Bind-mounted files such as /etc/exports cannot be replaced with
+		// rename(2); update the mounted inode in place instead.
+		file, openErr := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, mode)
+		if openErr != nil {
+			return openErr
+		}
+		if _, writeErr := file.WriteString(content); writeErr != nil {
+			_ = file.Close()
+			return writeErr
+		}
+		return file.Close()
+	}
+	return nil
 }
 func backup() (string, error) {
 	stamp := time.Now().UTC().Format("20060102T150405Z")
