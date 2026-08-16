@@ -1,0 +1,9 @@
+# Local build artifacts
+/share-manager
+
+# Local environment and editor files
+.env
+.DS_Store
+
+# Runtime backup data
+/backups/

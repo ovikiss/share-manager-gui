@@ -1,0 +1,45 @@
+services:
+  share-manager:
+    build: .
+    image: local/share-manager:0.1.0
+    container_name: share-manager
+    restart: unless-stopped
+    ports:
+      - "9090:8080"
+    privileged: true
+    pid: host
+    networks:
+      - tinyauth_default
+    environment:
+      PORT: "8080"
+      SMB_CONF_PATH: /etc/samba/smb.conf
+      NFS_EXPORTS_PATH: /etc/exports
+      NFS_EXPORTS_DIR: /etc/exports.d
+      SAMBA_DB_PATH: /var/lib/samba/private/passdb.tdb
+      BROWSE_ROOT: /mnt
+      RECYCLE_DIR: .recycle
+      NFS_MANAGER_FILENAME: share-manager.exports
+      UI_FILE: /app/index.html
+      MAX_RECYCLE_ENTRIES: "500"
+      MIN_USER_UID: "1000"
+      NSENTER_PID: "1"
+      SMB_SERVICE: smbd
+      FILE_UID: "1026"
+      FILE_GID: "100"
+      BACKUP_DIR: /var/lib/share-manager/backups
+      BACKUP_DISPLAY_DIR: /mnt/dsm-docker/share-manager/backups
+    volumes:
+      - /etc/samba:/etc/samba
+      - /etc/exports:/etc/exports
+      - /etc/exports.d:/etc/exports.d
+      - /var/lib/samba:/var/lib/samba
+      - /mnt/dsm-docker/share-manager:/var/lib/share-manager
+      - /mnt:/mnt
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  tinyauth_default:
+    external: true
