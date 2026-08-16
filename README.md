@@ -89,6 +89,7 @@ exportfs -ra
 ## Repository housekeeping
 
 - `.github/workflows/ci.yml` verifies Go formatting, tests, build and Docker build.
+- Version tags publish `amd64`, `arm64` and `arm/v7` images to GHCR.
 - `.github/dependabot.yml` checks Go modules, Docker and GitHub Actions monthly.
 - `.gitignore` excludes local binaries, environment files and runtime backups.
 - No host credentials, Samba databases or generated runtime data belong in Git.
