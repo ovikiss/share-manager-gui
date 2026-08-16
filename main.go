@@ -29,6 +29,8 @@ var (
 	recycleDir     = getenv("RECYCLE_DIR", "")
 	nfsManagerFile = getenv("NFS_MANAGER_FILENAME", "")
 	uiFile         = getenv("UI_FILE", "")
+	staticDir      = getenv("STATIC_DIR", "")
+	uiSettingsFile = getenv("UI_SETTINGS_PATH", "")
 	maxRecycle     = getenvInt("MAX_RECYCLE_ENTRIES", 0)
 	minUserUID     = getenvInt("MIN_USER_UID", 0)
 	nsenterPID     = getenvInt("NSENTER_PID", -1)
@@ -113,6 +115,10 @@ func runHostInput(input string, args ...string) (string, string, error) {
 	return "", err.Error(), err
 }
 func read(path string) string { data, _ := os.ReadFile(path); return string(data) }
+func mustJSON(value any) string {
+	data, _ := json.MarshalIndent(value, "", "  ")
+	return string(data) + "\n"
+}
 func atomicWrite(path, content string) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return err
@@ -487,8 +493,21 @@ func rewriteNFS(path, replacement string) error {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path
+	static := http.FileServer(http.Dir(staticDir))
 	if r.Method == "GET" && path == "/health" {
 		jsonResponse(w, 200, response{"ok": true})
+		return
+	}
+	if r.Method == "GET" && path == "/api/settings.json" {
+		settings := map[string]any{}
+		if data, err := os.ReadFile(uiSettingsFile); err == nil {
+			_ = json.Unmarshal(data, &settings)
+		}
+		jsonResponse(w, 200, response{"settings": settings})
+		return
+	}
+	if r.Method == "GET" && path != "/" && !strings.HasPrefix(path, "/api/") {
+		static.ServeHTTP(w, r)
 		return
 	}
 	if r.Method == "GET" && path == "/api/state" {
@@ -525,6 +544,29 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	mu.Lock()
 	defer mu.Unlock()
+	if path == "/api/settings" {
+		patch := map[string]any{}
+		if err := decode(r, &patch); err != nil {
+			jsonResponse(w, 400, response{"error": err.Error()})
+			return
+		}
+		settings := map[string]any{}
+		if data, err := os.ReadFile(uiSettingsFile); err == nil {
+			_ = json.Unmarshal(data, &settings)
+		}
+		for key, value := range patch {
+			switch key {
+			case "theme", "theme_style", "font_size", "poll_interval", "language":
+				settings[key] = value
+			}
+		}
+		if err := atomicWrite(uiSettingsFile, mustJSON(settings)); err != nil {
+			jsonResponse(w, 400, response{"error": err.Error()})
+			return
+		}
+		jsonResponse(w, 200, response{"ok": true})
+		return
+	}
 	if path == "/api/users/create" {
 		var input struct {
 			Username string `json:"username"`
@@ -717,7 +759,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", handler)
 	port := getenv("PORT", "")
-	if port == "" || uiFile == "" || smbConf == "" || exports == "" || exportsD == "" || backups == "" || backupDisplay == "" || browseRoot == "" || recycleDir == "" || nfsManagerFile == "" || sambaDB == "" || smbService == "" || nsenterPID < 1 || fileUID < 0 || fileGID < 0 || maxRecycle < 1 {
+	if port == "" || uiFile == "" || staticDir == "" || uiSettingsFile == "" || smbConf == "" || exports == "" || exportsD == "" || backups == "" || backupDisplay == "" || browseRoot == "" || recycleDir == "" || nfsManagerFile == "" || sambaDB == "" || smbService == "" || nsenterPID < 1 || fileUID < 0 || fileGID < 0 || maxRecycle < 1 {
 		log.Fatal("required configuration is missing; configure the share-manager environment in compose.yaml")
 	}
 	http.ListenAndServe(":"+port, nil)

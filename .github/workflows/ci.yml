@@ -23,5 +23,9 @@ jobs:
         run: go test ./...
       - name: Static build
         run: CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /tmp/share-manager main.go
+      - name: Sync shared UI assets
+        env:
+          UI_SHARED_REPO: https://github.com/ovikiss/mikrotik-ui-shared.git
+        run: ./scripts/sync-ui-shared.sh
       - name: Validate Docker build
         run: docker build -t share-manager-ci .

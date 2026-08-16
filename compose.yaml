@@ -20,6 +20,8 @@ services:
       RECYCLE_DIR: .recycle
       NFS_MANAGER_FILENAME: share-manager.exports
       UI_FILE: /app/index.html
+      STATIC_DIR: /app/static
+      UI_SETTINGS_PATH: /var/lib/share-manager/settings.json
       MAX_RECYCLE_ENTRIES: "500"
       MIN_USER_UID: "1000"
       NSENTER_PID: "1"

@@ -10,5 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends samba-common-bi
 WORKDIR /app
 COPY --from=build /out/share-manager /usr/local/bin/share-manager
 COPY index.html ./
+COPY static ./static
+COPY share-manager-icon.svg ./static/share-manager-icon.svg
 EXPOSE 8080
 CMD ["/usr/local/bin/share-manager"]

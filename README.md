@@ -63,6 +63,8 @@ Deployment-specific values are declared in `compose.yaml`, not in Go:
 | `BROWSE_ROOT` | Allowed root for folder browsing |
 | `RECYCLE_DIR` | Per-share recycle directory name |
 | `NFS_MANAGER_FILENAME` | File used for new NFS exports |
+| `UI_FILE` / `STATIC_DIR` | Application page and generated shared UI assets |
+| `UI_SETTINGS_PATH` | Persistent theme, style, text size and language preferences |
 | `FILE_UID` / `FILE_GID` | Ownership for persistent backup files |
 | `BACKUP_DIR` / `BACKUP_DISPLAY_DIR` | Internal and displayed backup paths |
 | `MAX_RECYCLE_ENTRIES` | Maximum recycle entries shown |
@@ -90,6 +92,7 @@ exportfs -ra
 
 - `.github/workflows/ci.yml` verifies Go formatting, tests, build and Docker build.
 - Version tags publish `amd64`, `arm64` and `arm/v7` images to GHCR.
+- Every CI/release build synchronizes the header, CSS, icons and translations from [`mikrotik-ui-shared`](https://github.com/ovikiss/mikrotik-ui-shared); these generated files are not committed here.
 - `.github/dependabot.yml` checks Go modules, Docker and GitHub Actions monthly.
 - `.gitignore` excludes local binaries, environment files and runtime backups.
 - No host credentials, Samba databases or generated runtime data belong in Git.

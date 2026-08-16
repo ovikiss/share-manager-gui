@@ -7,3 +7,6 @@
 
 # Runtime backup data
 /backups/
+
+# Generated from mikrotik-ui-shared during builds
+/static/
