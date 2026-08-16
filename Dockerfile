@@ -12,5 +12,6 @@ COPY --from=build /out/share-manager /usr/local/bin/share-manager
 COPY index.html ./
 COPY static ./static
 COPY share-manager-icon.svg ./static/share-manager-icon.svg
+COPY header-controls.json ./static/header-controls.json
 EXPOSE 8080
 CMD ["/usr/local/bin/share-manager"]
