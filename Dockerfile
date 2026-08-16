@@ -5,8 +5,8 @@ RUN go mod download
 COPY main.go ./
 RUN CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o /out/share-manager main.go
 
-FROM debian:13-slim
-RUN apt-get update && apt-get install -y --no-install-recommends samba-common-bin nfs-common util-linux ca-certificates curl && rm -rf /var/lib/apt/lists/*
+FROM alpine:3.22
+RUN apk add --no-cache samba-common-tools nfs-utils util-linux ca-certificates curl
 WORKDIR /app
 COPY --from=build /out/share-manager /usr/local/bin/share-manager
 COPY index.html ./
