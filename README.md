@@ -13,7 +13,7 @@ Samba and NFS remain host services; this container provides the management API a
 - Create and delete NFS exports with separate, explained options.
 - Validate changes with `testparm` and `exportfs`.
 - Automatic backups before configuration and account changes.
-- Restore files from each share's `.recycle` directory.
+- Restore files from each share's configured recycle directory (`#recycle` by default).
 - Local unauthenticated access and external authentication through Nginx Proxy
   Manager + Tinyauth.
 

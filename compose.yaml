@@ -17,7 +17,7 @@ services:
       NFS_EXPORTS_DIR: /etc/exports.d
       SAMBA_DB_PATH: /var/lib/samba/private/passdb.tdb
       BROWSE_ROOT: /mnt
-      RECYCLE_DIR: .recycle
+      RECYCLE_DIR: "#recycle"
       NFS_MANAGER_FILENAME: share-manager.exports
       UI_FILE: /app/index.html
       STATIC_DIR: /app/static
