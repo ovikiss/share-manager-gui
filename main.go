@@ -63,14 +63,15 @@ type section struct {
 	lines []string
 }
 type sambaShare struct {
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	ReadOnly   bool   `json:"read_only"`
-	GuestOK    bool   `json:"guest_ok"`
-	ValidUsers string `json:"valid_users"`
-	WriteList  string `json:"write_list"`
-	ReadList   string `json:"read_list"`
-	Recycle    bool   `json:"recycle"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	ReadOnly    bool   `json:"read_only"`
+	GuestOK     bool   `json:"guest_ok"`
+	ValidUsers  string `json:"valid_users"`
+	WriteList   string `json:"write_list"`
+	ReadList    string `json:"read_list"`
+	Recycle     bool   `json:"recycle"`
+	TimeMachine bool   `json:"time_machine"`
 }
 type nfsExport struct {
 	Path    string `json:"path"`
@@ -278,7 +279,8 @@ func state() ([]sambaShare, []nfsExport, []recycleEntry) {
 				recycle = true
 			}
 		}
-		shares = append(shares, sambaShare{Name: s.name, Path: o["path"], ReadOnly: ro, GuestOK: strings.EqualFold(o["guest ok"], "yes"), ValidUsers: o["valid users"], WriteList: o["write list"], ReadList: o["read list"], Recycle: recycle})
+		timeMachine := strings.EqualFold(o["fruit:time machine"], "yes")
+		shares = append(shares, sambaShare{Name: s.name, Path: o["path"], ReadOnly: ro, GuestOK: strings.EqualFold(o["guest ok"], "yes"), ValidUsers: o["valid users"], WriteList: o["write list"], ReadList: o["read list"], Recycle: recycle && !timeMachine, TimeMachine: timeMachine})
 	}
 	nfs := make([]nfsExport, 0)
 	files := []string{exports}
@@ -345,7 +347,9 @@ func editShare(input sambaShare) (string, error) {
 			lines = append(lines, fmt.Sprintf("   %s = %s\n", item.k, strings.TrimSpace(item.v)))
 		}
 	}
-	if input.Recycle {
+	if input.TimeMachine {
+		lines = append(lines, "   vfs objects = fruit streams_xattr\n", "   fruit:metadata = stream\n", "   fruit:model = MacSamba\n", "   fruit:time machine = yes\n")
+	} else if input.Recycle {
 		lines = append(lines, "   vfs objects = recycle\n", fmt.Sprintf("   recycle:repository = %s\n", recycleDir), "   recycle:keeptree = yes\n", "   recycle:versions = yes\n")
 	}
 	replacement := section{name: input.Name, lines: lines}

@@ -7,6 +7,7 @@ Samba and NFS remain host services; this container provides the management API a
 
 - Create, edit and delete Samba shares.
 - Toggle Samba Recycle Bin per share.
+- Create Samba Time Machine shares with native `fruit`/`streams_xattr` support; Recycle Bin is disabled automatically for them.
 - Browse host folders under the configured Browse root.
 - Select Samba users for access, write and read-only lists.
 - Add/change/delete Samba passwords without deleting Linux accounts.
