@@ -15,7 +15,7 @@ on:
         description: "How many completed runs to keep per workflow/ref (main or v*)"
         type: string
         required: true
-        default: "5"
+        default: "3"
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -68,7 +68,7 @@ jobs:
           dry_run_raw = os.getenv("DRY_RUN", "false")
           DRY_RUN = str(dry_run_raw).strip().lower() in ("1", "true", "yes", "on")
 
-          keep_raw = os.getenv("KEEP_RUNS_PER_REF", "5").strip() or "5"
+          keep_raw = os.getenv("KEEP_RUNS_PER_REF", "3").strip() or "3"
           KEEP_RUNS_PER_REF = int(keep_raw)
           if KEEP_RUNS_PER_REF < 1:
             KEEP_RUNS_PER_REF = 1
@@ -81,7 +81,7 @@ jobs:
           }
           ENABLE_GHCR_CLEANUP = True
           GHCR_UNTAGGED_GRACE_HOURS = 48
-          GHCR_KEEP_RECENT_UNTAGGED = 20
+          GHCR_KEEP_RECENT_UNTAGGED = 0
 
           API_BASE = "https://api.github.com"
           HEADERS = {
@@ -232,21 +232,30 @@ jobs:
           )
 
           # Safe policy:
-          # - never delete tagged versions (latest, v*, any tag)
+          # - keep latest and the three newest semantic release families
           # - never delete untagged versions that are child manifests referenced by latest/v* tags
           # - only delete remaining untagged versions older than grace period
           # - always keep the newest N untagged versions
           now = datetime.now(timezone.utc)
           untagged = []
           tagged_count = 0
-          keep_tag_refs = set()
+          release_created = {}
+          for v in versions:
+              created = str(v.get("created_at") or "")
+              for t in ((v.get("metadata") or {}).get("container") or {}).get("tags") or []:
+                  match = SEMVER_TAG_RE.match(str(t))
+                  if match:
+                      family = re.match(r"^v\d+\.\d+(?:\.\d+)?", str(t)).group(0)
+                      release_created[family] = max(release_created.get(family, ""), created)
+          keep_families = {family for family, _ in sorted(release_created.items(), key=lambda item: item[1], reverse=True)[:3]}
+          keep_tag_refs = {"latest"} | keep_families
           for v in versions:
               tags = ((v.get("metadata") or {}).get("container") or {}).get("tags") or []
               tags = [str(t).strip() for t in tags if str(t).strip()]
               if tags:
                   tagged_count += 1
                   for t in tags:
-                      if t == "latest" or SEMVER_TAG_RE.match(t):
+                      if t == "latest" or t.startswith("latest-") or any(t == family or t.startswith(family + "-") for family in keep_families):
                           keep_tag_refs.add(t)
                   continue
 
@@ -270,6 +279,10 @@ jobs:
               keep_digests.update(ghcr_manifest_digests(f"{image_base}:{tag}"))
 
           delete_version_ids = []
+          for v in versions:
+              tags = [str(t).strip() for t in (((v.get("metadata") or {}).get("container") or {}).get("tags") or []) if str(t).strip()]
+              if tags and not any(t in keep_tag_refs for t in tags):
+                  delete_version_ids.append(int(v.get("id")))
           for idx, (v, created_at) in enumerate(untagged):
               digest_name = str(v.get("name") or "").strip()
               if digest_name and digest_name in keep_digests:
